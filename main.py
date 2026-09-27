@@ -172,7 +172,28 @@ async def pet_history(message: Message, command: CommandObject):
         )
     await message.answer(text)
 
+@dp.message(Command("last_vaccination"))
+async def last_vaccination(message: Message, command: CommandObject):
+    if not command.args:
+        await message.answer("❌ Используйте: /last_vaccination <pet_id>")
+        return
 
+    try:
+        pet_id = int(command.args)
+    except ValueError:
+        await message.answer("❌ pet_id должен быть числом.")
+        return
+
+    user_id = message.from_user.id
+    pet = await check_pet(pet_id, user_id)
+    if not pet:
+        await message.answer("❌ Питомец не найден или принадлежит другому пользователю.")
+        return
+
+    vaccination = await get_last_vaccination(pet_id)
+    if not vaccination:
+        await message.answer(f"💉 У питомца {pet['name']} прививок ещё не было.")
+        return
 
 
 async def main():
