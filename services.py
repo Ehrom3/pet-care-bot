@@ -43,3 +43,40 @@ async def get_pet_history(pet_id):
     await con.close()
     return rows
 
+async def get_last_vaccination(pet_id):
+    con = await get_connection()
+    row = await con.fetchrow("""
+        SELECT logged_at FROM care_logs
+        WHERE pet_id = $1 AND type = 'vaccination' ORDER BY logged_at DESC LIMIT 1
+        """, pet_id)
+    await con.close()
+    return row
+
+@dp.message(Command("last_vaccination"))
+async def last_vaccination(message: Message, command: CommandObject):
+    if not command.args:
+        await message.answer("❌ Используйте: /last_vaccination <pet_id>")
+        return
+
+    try:
+        pet_id = int(command.args)
+    except ValueError:
+        await message.answer("❌ pet_id должен быть числом.")
+        return
+
+    user_id = message.from_user.id
+    pet = await check_pet(pet_id, user_id)
+    if not pet:
+        await message.answer("❌ Питомец не найден или принадлежит другому пользователю.")
+        return
+
+    vaccination = await get_last_vaccination(pet_id)
+    if not vaccination:
+        await message.answer(f"💉 У питомца {pet['name']} прививок ещё не было.")
+        return
+
+    await message.answer(
+        f"💉 Последняя прививка — {pet['name']}\n"
+        f"📅 {vaccination['logged_at'].strftime('%d.%m.%Y %H:%M')}"
+    )
+

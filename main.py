@@ -174,6 +174,7 @@ async def pet_history(message: Message, command: CommandObject):
 
 
 
+
 async def main():
     await create_tables()
     print("Bot started...")
