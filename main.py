@@ -27,7 +27,6 @@ keyboard = ReplyKeyboardMarkup(
     resize_keyboard=True
 )
 
-
 @dp.message(Command("start"))
 async def start(message: Message):
     await message.answer(
@@ -36,7 +35,8 @@ async def start(message: Message):
 "/my_pets - Показывает всех питомцев пользователя\n"
 "/log_care - Записывает событие ухода (feeding / vet_visit / vaccination)\n"
 "/pet_history - Показывает последние 10 событий по питомцу\n"
-"/last_vaccination - Показывает дату последней прививки этого питомца"
+"/last_vaccination - Показывает дату последней прививки этого питомца\n"
+"/pets_needing_vaccination - Последняя прививка была больше 365 дней назад или вовсе не было"
     ,reply_markup=keyboard
     )
 
@@ -195,6 +195,26 @@ async def last_vaccination(message: Message, command: CommandObject):
         await message.answer(f"💉 У питомца {pet['name']} прививок ещё не было.")
         return
 
+@dp.message(Command("pets_needing_vaccination"))
+async def pets_needing_vaccination(message: Message):
+    user_id = message.from_user.id
+    pets = await get_pets_needing_vaccination(user_id)
+    if not pets:
+        await message.answer("✅ Все ваши питомцы имеют актуальную вакцинацию.")
+        return
+
+    text = "💉 Питомцы, которым нужна вакцинация:\n\n"
+    for pet in pets:
+        if pet["last_vaccination"]:
+            date = pet["last_vaccination"].strftime("%d.%m.%Y")
+        else:
+            date = "прививок ещё не было"
+        text += (
+            f"🐾 {pet['name']} ({pet['species']})\n"
+            f"🆔 ID: {pet['id']}\n"
+            f"📅 Последняя прививка: {date}\n\n"
+        )
+    await message.answer(text)
 
 async def main():
     await create_tables()

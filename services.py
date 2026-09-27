@@ -52,4 +52,18 @@ async def get_last_vaccination(pet_id):
     await con.close()
     return row
 
+async def get_pets_needing_vaccination(user_id):
+    con = await get_connection()
+
+    rows = await con.fetch("""
+        SELECT p.id, p.name, p.species, MAX(c.logged_at) AS last_vaccination FROM pets p
+        LEFT JOIN care_logs c ON p.id = c.pet_id AND c.type = 'vaccination' WHERE p.user_id = $1
+        GROUP BY p.id, p.name, p.species HAVING MAX(c.logged_at) IS NULL
+        OR MAX(c.logged_at) < CURRENT_TIMESTAMP - INTERVAL '365 days'
+        ORDER BY p.id
+        """, user_id)
+
+    await con.close()
+    return rows
+
 
