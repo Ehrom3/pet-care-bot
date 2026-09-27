@@ -20,7 +20,7 @@ async def create_tables():
         await conn.execute("""
             CREATE TABLE if not exists pets(
                 id SERIAL PRIMARY KEY,
-                user_id INT,
+                user_id BIGINT,
                 name VARCHAR(100),
                 species VARCHAR(100)
             )
